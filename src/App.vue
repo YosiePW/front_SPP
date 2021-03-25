@@ -1,12 +1,27 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
+    <router-view name="header" />
+      <div class="wrapper">
+        <router-view />
+      </div>
+    <router-view name="footer" />
   </div>
 </template>
+
+<script>
+import Navbar from './views/layouts/Navbar'
+export default {
+  name: 'App',
+  components: {
+    Navbar
+  },
+  data : function(){
+    return {
+      status_login: ''
+    }
+  }
+}
+</script>
 
 <style>
 #app {
