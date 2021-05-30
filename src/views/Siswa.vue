@@ -13,6 +13,9 @@
                             </p>
                             <div class="table-responsive">
                                 <b-table striped hover :items="siswa" :fields="fields">
+                                    <template v-slot:cell(kelas)="data">
+                                        {{data.item.kelas+" "+data.item.kompetensi_keahlian}}
+                                    </template>
                                     <template v-slot:cell(Aksi)="data">
                                         <b-button size="sm" variant="info" v-on:click="Edit(data.item)" v-b-modal.modalSiswa>
                                             <i class="mdi mdi-pencil btn-icon-prepend"></i> Ubah
@@ -44,15 +47,23 @@
             <form ref="form">
                 <div class="form-group">
                     <label for="nis" class="col-form-label">NIS</label>
-                    <b-form-input type="text" v-model="nis" id="nis" placeholder="NIS"></b-form-input>
+                    <b-form-input type="text" v-model="nis" id="NIS" placeholder="NIS"></b-form-input>
                 </div>
                 <div class="form-group">
                     <label for="nama" class="col-form-label">Nama Siswa</label>
                     <b-form-input type="text" v-model="nama" id="nama" placeholder="Nama"></b-form-input>
                 </div>
+                <!-- <div class="form-group">
+                    <label for="nama" class="col-form-label">Username Siswa</label>
+                    <b-form-input type="text" v-model="username" id="nama" placeholder="Userame"></b-form-input>
+                </div> -->
+                <div class="form-group">
+                    <label for="nama" class="col-form-label">Password Siswa</label>
+                    <b-form-input type="password" v-model="password" id="nama" placeholder="Password"></b-form-input>
+                </div>
                 <div class="form-group">
                     <label for="id_kelas" class="col-form-label">Kelas</label>
-                    <b-form-select id="id_kelas" v-model="id_kelas" :options="nama_kelas"></b-form-select>
+                    <b-form-select id="id_kelas" v-model="id_kelas" :options="kelas"></b-form-select>
                 </div>
                 <div class="form-group">
                     <label for="alamat" class="col-form-label">Alamat</label>
@@ -62,10 +73,10 @@
                     <label for="no_telp" class="col-form-label">No. Telp</label>
                     <b-form-input type="text" v-model="no_telp" placeholder="No. Telp"></b-form-input>
                 </div>
-                <div class="form-group">
+                <!-- <div class="form-group">
                     <label for="id_spp" class="col-form-label">SPP</label>
                     <b-form-select id="id_spp" v-model="id_spp" :options="tahun"></b-form-select>
-                </div>
+                </div> -->
             </form>
         </b-modal>
     </div>
@@ -81,7 +92,7 @@ module.exports = {
             id_kelas: "",
             id_spp: "",
             nis: "",
-            nama_siswa: "",
+            nama: "",
             alamat: "",
             no_telp: "",
             action: "",
@@ -91,9 +102,11 @@ module.exports = {
             perPage: 10,
             key: "",
             siswa: [],
-            fields: ["id", "nis", "nama_siswa", "kelas", "alamat", "no_telp", "SPP", "Aksi"],
+            fields: ["id", "nis", "nama_siswa", "kelas", "alamat", "no_telp", "Aksi"],
             kelas: [],
             SPP: [],
+            // username:"",
+            password:"",
         }
     },
 
@@ -104,6 +117,7 @@ module.exports = {
             this.$bvToast.show("loadingToast");
             this.axios.get("/siswa/" + this.perPage + "/" + offset, conf)
             .then(response => {
+                console.log(response.data);
                 if(response.data.status == 1){
                     this.$bvToast.hide("loadingToast");
                     this.siswa = response.data.siswa;
@@ -112,7 +126,7 @@ module.exports = {
                     this.$bvToast.hide("loadingToast");
                     this.message = "Gagal menampilkan data siswa."
                     this.$bvToast.show("message");
-                    this.$router.push({name: 'login'})
+                    this.$router.push({name: 'Login'})       
                 }
             })
             .catch(error => {
@@ -128,25 +142,25 @@ module.exports = {
                 let json_kelas = response.data.kelas;
                 let list_kelas = []
                 json_kelas.forEach(element => {
-                    list_kelas.push({value: element.id, text: element.nama_kelas})
+                    list_kelas.push({value: element.id, text: element.nama_kelas+' '+element.kompetensi_keahlian})
                 });
-                this.nama_kelas = list_kelas
+                this.kelas = list_kelas
             })
         },
 
-        getSppDropdown: function(){
-            // ambil data spp untuk dropdown
-            let conf = { headers: { "Authorization" : 'Bearer ' + this.key } };
-            this.axios.get("/spp", conf)
-            .then(response => {
-                let json_spp = response.data.spp;
-                let list_spp = []
-                json_spp.forEach(element => {
-                    list_spp.push({value: element.id, text: element.tahun})
-                });
-                this.tahun = list_spp
-            })
-        },
+        // getSppDropdown: function(){
+        //     // ambil data spp untuk dropdown
+        //     let conf = { headers: { "Authorization" : 'Bearer ' + this.key } };
+        //     this.axios.get("/spp", conf)
+        //     .then(response => {
+        //         let json_spp = response.data.spp;
+        //         let list_spp = []
+        //         json_spp.forEach(element => {
+        //             list_spp.push({value: element.id, text: element.tahun})
+        //         });
+        //         this.tahun = list_spp
+        //     })
+        // },
 
         pagination: function(){
             if(this.search == ""){
@@ -160,24 +174,25 @@ module.exports = {
             this.action = "insert"
             this.id = ""
             this.id_kelas = ""
-            this.id_spp = ""
+            // this.id_spp = ""
             this.nis = ""
             this.nama = ""
             this.alamat = ""
             this.no_telp = ""
             this.getKelasDropdown()
-            this.getSppDropdown()
+            // this.getSppDropdown()
         },
 
         Edit : function(item){
             this.getKelasDropdown()
-            this.getSppDropdown()
+            // this.getSppDropdown()
             this.action = "update";
             this.id = item.id;
             this.id_kelas = item.id_kelas;
-            this.id_spp = item.id_spp;
             this.nis = item.nis;
-            this.nama = item.nama;
+            this.nama = item.nama_siswa;
+            // this.username = item.username;
+            this.password = item.password;
             this.alamat = item.alamat;
             this.no_telp = item.no_telp;
         },
@@ -199,6 +214,8 @@ module.exports = {
                 form.append("id_spp", this.id_spp);
                 form.append("nis", this.nis);
                 form.append("nama", this.nama);
+                // form.append("username", this.username);
+                form.append("password", this.password);
                 form.append("alamat", this.alamat);
                 form.append("no_telp", this.no_telp);
                 this.axios.post("/siswa", form, conf)
@@ -218,7 +235,8 @@ module.exports = {
             } else {
                 let form = {
                     id_kelas: this.id_kelas,
-                    id_spp: this.id_spp,
+                    // username: this.username,
+                    password: this.password,
                     nis: this.nis,
                     nama: this.nama,
                     alamat: this.alamat,
@@ -245,7 +263,7 @@ module.exports = {
             let conf = { headers: { "Authorization" : "Bearer " + this.key } };
             if(confirm('Apakah anda yakin ingin menghapus data ini?')){
                 this.$bvToast.show("loadingToast");
-                this.axios.delete("/siswa" + id, conf)
+                this.axios.delete("/siswa/" + id, conf)
                 .then(response => {
                     this.getData();
                     this.$bvToast.hide("loadingToast");

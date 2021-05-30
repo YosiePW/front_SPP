@@ -15,13 +15,16 @@
                             </p>
                             <div class="table-responsive">
                                 <b-table striped hover :items="pembayaran" :fields="fields">
+                                    <template v-slot:cell(SPP)="data">
+                                        {{"#"+data.item.sppid+" - "+months[data.item.bulan-1]+" "+data.item.tahun}}
+                                    </template>
                                     <template v-slot:cell(Aksi)="data">
-                                        <b-button size="sm" variant="info" v-on:click="Edit(data.item)" v-b-modal.modalPembayaran>
+                                        <!-- <b-button size="sm" variant="info" v-on:click="Edit(data.item)" v-b-modal.modalPembayaran>
                                             <i class="mdi mdi-pencil btn-icon-prepend"></i>Ubah
                                         </b-button>&nbsp;
                                         <b-button size="sm" variant="danger" v-on:click="Drop(data.item.id)">
                                             <i class="mdi mdi-delete btn-icon-prepend"></i>Hapus
-                                        </b-button>&nbsp;
+                                        </b-button>&nbsp; -->
                                         <b-button size="sm" variant="secondary" v-on:click="Print(data.item)">
                                             <i class="mdi mdi-file-document-box-outline btn-icon-prepend"></i>Print
                                         </b-button>
@@ -53,7 +56,7 @@
                 </div>
                 <div class="form-group">
                     <label for="id_siswa" class="col-form-label">Nama Siswa</label>
-                    <b-form-select id="id_siswa" v-model="id_siswa" :options="nama_siswa"></b-form-select>
+                    <b-form-select id="id_siswa" v-on:change="getSppDropdown" v-model="id_siswa" :options="nama_siswa"></b-form-select>
                 </div>
                 <div class="form-group">
                     <label for="tanggal_pembayaran" class="col-form-label">Tanggal Pembayaran</label>
@@ -61,19 +64,50 @@
                 </div>
                 <div class="form-group">
                     <label for="id_spp" class="col-form-label">SPP</label>
-                    <b-form-select id="id_spp" v-model="id_spp" :options="tahun"></b-form-select>
+                    <b-form-select id="id_spp" v-on:change="sppFilter(id_spp)" v-model="id_spp" :options="tahun"></b-form-select>
                 </div>
+                {{ttlbyr}}
                 <div class="form-group">
                     <label for="jumlah_bayar" class="col-form-label">Jumlah Bayar</label>
                     <b-form-input type="text" v-model="jumlah_bayar" placeholder="Jumlah Bayar"></b-form-input>
                 </div>
             </form>
         </b-modal>
+             <vue-html2pdf
+        :show-layout="false"
+        :float-layout="true"
+        :enable-download="true"
+        :preview-modal="true"
+        :paginate-elements-by-height="1400"
+        filename="BuktiPembayaran"
+        :pdf-quality="2"
+        :manual-pagination="false"
+        pdf-format="a4"
+        pdf-orientation="portrait"
+        pdf-content-width="800px"
+ 
+        @progress="onProgress($event)"
+        @hasStartedGeneration="hasStartedGeneration()"
+        @hasGenerated="hasGenerated($event)"
+        ref="html2Pdf"
+    >
+        <section slot="pdf-content">
+            <h2>Bukti Pembayaran</h2>
+            <h6>-----------------------------------------------------------------</h6>
+            <h5>Nama Siswa : {{pdftoprint.nama_siswa}}</h5>
+            <h5>Nama Petugas : {{pdftoprint.nama_petugas}}</h5>
+            <h5>SPP : {{"#"+pdftoprint.sppid+" - "+months[pdftoprint.bulan-1]+" "+pdftoprint.tahun}} </h5>
+            <h5>Tanggal : {{pdftoprint.tanggal_pembayaran}} </h5>
+            <h5>Jumlah Bayar : Rp. {{Number(pdftoprint.jumlah_bayar).toLocaleString()}} </h5>
+        </section>
+    </vue-html2pdf>
     </div>
 </template>
 
 <script>
-module.exports = {
+import VueHtml2pdf from 'vue-html2pdf';
+
+export default {
     data : function(){
         return {
             search: "",
@@ -87,18 +121,38 @@ module.exports = {
             message: "",
             currentPage: 1,
             rows: 0,
+            ttlbyr: 100,
             perPage: 10,
             key: "",
+            pdftoprint: [],
             pembayaran: [],
-            fields: ["id", "nama_petugas", "nis", "nama_siswa", "SPP", "tanggal_pembayaran", "jumlah_bayar", "Aksi"],
+            fields: ["id","nis","nama_siswa", "nama_petugas",  "SPP", "tanggal_pembayaran","jumlah_bayar", "Aksi"],
             nama_petugas: [],
             nis: [],
             nama_siswa: [],
             SPP: [],
+            spp_arr: [],
+            tahun: [],
+            months: [ "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+           "Juli", "Augustus", "September", "Oktober", "November", "Desember" ],
         }
     },
 
     methods: {
+        sppFilter(id_spp){
+            try {
+                this.ttlbyr = this.spp_arr.filter(d => d.id === id_spp)[0].nominal
+            } catch (error) {
+                this.ttlbyr = 0;
+            }
+        },
+        Print(item){
+            this.pdftoprint = item;
+            this.generateReport();
+        },
+        generateReport () {
+            this.$refs.html2Pdf.generatePdf()
+        },
         getData: function(){
             let conf = { headers: { "Authorization" : 'Bearer ' + this.key } };
             let offset = (this.currentPage - 1) * this.perPage;
@@ -150,14 +204,15 @@ module.exports = {
 
         getSppDropdown: function(){
             let conf = { headers: { "Authorization" : 'Bearer ' + this.key }};
-            this.axios.get("/spp", conf)
+            this.axios.get("/spp/siswa/"+this.id_siswa, conf)
             .then(response => {
                 let json_spp = response.data.spp;
                 let list_spp = []
                 json_spp.forEach(element => {
-                    list_spp.push({value: element.id, text: element.tahun})
+                    list_spp.push({value: element.id, text: "#"+element.id+" - "+this.months[element.bulan-1]+" "+element.tahun})
                 });
                 this.tahun = list_spp
+                this.spp_arr = json_spp
             })
         },
 
@@ -179,17 +234,17 @@ module.exports = {
             this.jumlah_bayar = ""
             this.getPetugasDropdown()
             this.getSiswaDropdown()
-            this.getSppDropdown()
+            // this.getSppDropdown()
         },
 
         Edit : function(){
+            this.id_siswa = item.id_siswa;
             this.getPetugasDropdown()
             this.getSiswaDropdown()
             this.getSppDropdown()
             this.action = "update";
             this.id = item.id;
             this.id_petugas = item.id_petugas;
-            this.id_siswa = item.id_siswa;
             this.id_spp = item.id_spp;
             this.tanggal_pembayaran = item.tanggal_pembayaran;
             this.jumlah_bayar = item.jumlah_bayar;
@@ -274,6 +329,9 @@ module.exports = {
     mounted() {
         this.key = localStorage.getItem("Authorization");
         this.getData();
+    },
+    components: {
+        VueHtml2pdf
     },
 }
 </script>

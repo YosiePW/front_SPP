@@ -55,6 +55,31 @@ export default new Vuex.Store({
       })
     },
 
+    Login_Siswa({ commit }, user) {
+      return new Promise((resolve, reject) => {
+        commit('auth_request')
+        axios({ url: '/login/siswa', data: user, method: 'POST' })
+          .then(response => {
+            const token = response.data.token
+            const logged = response.data.logged
+            localStorage.setItem('Authorization', token)
+            axios.defaults.headers.common['Authorization'] = token
+            commit('auth_success', token)
+            let conf = { headers: { "Authorization": "Bearer " + token } };
+            axios.get("/login/check", conf)
+              .then(response => {
+              commit('userDetail', response.data.data.user)
+              })
+            resolve(response)
+          })
+          .catch(err => {
+            commit('auth_error')
+            localStorage.removeItem('Authorization')
+            reject(err)
+        })
+      })
+    },
+
     register({ commit }, user) {
       return new Promise((resolve, reject) => {
         commit('auth_request')

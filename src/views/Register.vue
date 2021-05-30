@@ -49,7 +49,7 @@
                                         <div class="input-group">
                                             <div class="input-group-prepend bg-transparent">
                                                 <span class="input-group-text bg-transparent border-right-0">
-                                                    <i class="mdi mdi-email-outline text-primary"></i>
+                                                    <i class="mdi mdi-clipboard-outline text-primary"></i>
                                                 </span>
                                             </div>
                                             <input v-model="level" type="text" class="form-control form-control-lg border-left-0"

@@ -6,14 +6,14 @@
         <div class="nav-top flex-grow-1">
           <div class="container d-flex flex-row h-100 align-items-center">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
-              <a class="navbar-brand brand-logo" href="/"><img src="assets/img/logo.png"></a>
+              <a class="navbar-brand brand-logo" href="/tanggungan_siswa"><img src="assets/img/logo.png"></a>
             </div>
             <div class="navbar-menu-wrapper
              d-flex align-items-center justify-content-end flex-grow-1">
               <ul class="navbar-nav navbar-nav-right">
                 <li class="nav-item nav-profile dropdown">
-                  <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
-                    Hi, Petugas
+                  <a class="nav-link dropdown-toggle" data-toggle="dropdown" id="profileDropdown">
+                    Hi, Siswa
                   </a>
                   <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
                     <a class="dropdown-item" @click="logout">
@@ -34,34 +34,24 @@
         <div class="container">
           <ul class="nav page-navigation">
             <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="mdi mdi-account-settings menu-icon"></i>
-                <span class="menu-title">Data Petugas</span>
-              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/kelas">
-                <i class="mdi mdi-codepen menu-icon"></i>
-                <span class="menu-title">Data Kelas</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="/siswa" class="nav-link">
-                <i class="mdi mdi-account-box-outline menu-icon"></i>
-                <span class="menu-title">Data Siswa</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/spp">
+              <a class="nav-link" href="/tanggungan_siswa">
                 <i class="mdi mdi-file-document-box-outline menu-icon"></i>
-                <span class="menu-title">Data SPP</span>
+                <span class="menu-title">Data Tanggungan</span>
               </a>
             </li>
             <li class="nav-item">
-              <a href="/pembayaran" class="nav-link">
+              <a href="/data_pembayaran" class="nav-link">
                 <i class="mdi mdi-note-multiple-outline menu-icon"></i>
                 <span class="menu-title">Data Pembayaran</span>
               </a>
+            </li>
+            <li class="nav-item">
+              <!-- <a class="nav-link" href="/tanggungan">
+                <i class="mdi mdi-file-document-box-outline menu-icon"></i>
+                <span class="menu-title">Data Tanggungan</span>
+              </a> -->
             </li>
           </ul>
         </div>
@@ -72,7 +62,7 @@
 
 <script>
 export default {
-    name: 'navbar',
+    name: 'navbar_siswa',
     computed : {
         isLoggedIn : function(){ return this.$store.getters.isLoggedIn}
     },
@@ -84,7 +74,7 @@ export default {
             if (response.data.logged === false || response.data.status === 0) {
                 this.$store.commit('logout')
                 localStorage.removeItem("Authorization")
-                this.$router.push({name: 'login'})
+                this.$router.push({name: 'Login_Siswa'})
             }
           })
           .catch(error => {

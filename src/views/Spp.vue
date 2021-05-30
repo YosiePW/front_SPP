@@ -13,6 +13,9 @@
                             </p>
                             <div class="table-responsive">
                                 <b-table striped hover :items="spp" :fields="fields">
+                                    <template v-slot:cell(bulan)="data">
+                                        {{months[data.item.bulan-1]}}
+                                    </template>
                                     <template v-slot:cell(Aksi)="data">
                                         <b-button size="sm" variant="info" v-on:click="Edit(data.item)" v-b-modal.modalSpp>
                                             <i class="mdi mdi-pencil btn-icon-prepend"></i> Ubah
@@ -24,7 +27,7 @@
                                 </b-table>
                                 <b-pagination v-model="currentPage" :per-page="perPage" :total-rows="rows" align="center" v-on:input="pagination"></b-pagination>
                                 <b-toast id="loadingToast" title="Processing Data" no-auto-hide>
-                                    <b-spiner label="Spinning" variant="success"></b-spiner>
+                                    <b-spinner variant="success" label="Spinning"></b-spinner>
                                     <strong class="text-success">Loading ...</strong>
                                 </b-toast>
                                 <b-toast id="message" title="Message">
@@ -42,12 +45,20 @@
             <form ref="form">
                 <div class="form-group">
                     <label for="tahun" class="col-form-label">Tahun</label>
-                    <input type="text" class="form-control" name="tahun" 
+                    <input type="number" class="form-control" name="tahun" 
                     id="tahun" placeholder="Tahun" v-model="tahun">
                 </div>
                 <div class="form-group">
+                    <label for="tahun" class="col-form-label">Bulan</label>
+                    <b-form-select id="id_kelas" v-model="bulan" :options="bulan_op"></b-form-select>
+                </div>
+                <div class="form-group">
+                    <label for="tahun" class="col-form-label">Siswa</label>
+                    <b-form-select id="id_kelas" v-model="id_siswa" :options="siswa"></b-form-select>
+                </div>
+                <div class="form-group">
                     <label for="nominal" class="col-form-label">Nominal</label>
-                    <input type="text" class="form-control" name="nominal"
+                    <input type="number" class="form-control" name="nominal"
                     id="nominal" placeholder="Nominal" v-model="nominal">
                 </div>
             </form>
@@ -63,8 +74,25 @@ module.exports = {
         return {
             search: "",
             id: "",
-            tahun: "",
-            nominal: "",
+            tahun: 0,
+            bulan: 0,
+            bulan_op:[
+                {value:'1' ,text:'Januari'},
+                {value:'2' ,text:'Febuari'},
+                {value:'3' ,text:'Maret'},
+                {value:'4' ,text:'April'},
+                {value:'5' ,text:'Mei'},
+                {value:'6' ,text:'Juni'},
+                {value:'7' ,text:'Juli'},
+                {value:'8' ,text:'Agustus'},
+                {value:'9' ,text:'September'},
+                {value:'10' ,text:'Oktober'},
+                {value:'11' ,text:'November'},
+                {value:'12' ,text:'Desember'},
+            ],
+            siswa:[],
+            id_siswa: "",
+            nominal: 0,
             action: "",
             message: "",
             currentPage: 1,
@@ -72,7 +100,9 @@ module.exports = {
             perPage: 10,
             key: "",
             spp: [],
-            fields: ["id", "tahun", "nominal", "Aksi"],
+            fields: ["id","nama","bulan","tahun", "nominal", "Aksi"],
+            months: [ "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+           "Juli", "Augustus", "September", "Oktober", "November", "Desember" ],
         }
     },
     
@@ -99,6 +129,19 @@ module.exports = {
                 console.log(error);
             });
         },
+        getSiswaDropdown: function(){
+            // ambil data kelas untuk dropdown
+            let conf = { headers: { "Authorization" : 'Bearer ' + this.key } };
+            this.axios.get("/siswa", conf)
+            .then(response => {
+                let json_siswa = response.data.siswa    ;
+                let list_siswa = []
+                json_siswa.forEach(element => {
+                    list_siswa.push({value: element.id, text: element.nama_siswa})
+                });
+                this.siswa  = list_siswa
+            })
+        },
 
         pagination: function () {
             if (this.search == "") {
@@ -109,15 +152,21 @@ module.exports = {
         },
 
         Add: function () {
+            this.getSiswaDropdown();
             this.action     = "insert";
-            this.tahun      = "";
-            this.nominal    = "";
+            this.id_siswa   = 0;
+            this.bulan      = 0;
+            this.tahun      = 0;
+            this.nominal    = 0;
             console.log("testing");
         },
 
         Edit: function(item) {
+            this.getSiswaDropdown();
             this.action     = "update";
             this.id         = item.id;
+            this.id_siswa   = item.id_siswa;
+            this.bulan      = item.bulan;
             this.tahun      = item.tahun;
             this.nominal    = item.nominal;
             console.log("testing");
@@ -128,6 +177,8 @@ module.exports = {
             this.$bvToast.show("loadingToast");
             if (this.action === "insert") {
                 let form = new FormData();
+                form.append("id_siswa", this.id_siswa);
+                form.append("bulan", this.bulan);
                 form.append("tahun", this.tahun);
                 form.append("nominal", this.nominal);
                 console.log(form);
@@ -149,8 +200,10 @@ module.exports = {
                 });
             } else {
                 let form = {
+                    bulan: this.bulan,
                     tahun: this.tahun,
                     nominal: this.nominal,
+                    id_siswa: this.id_siswa,
                 };
                 console.log(form);
                 this.axios
